@@ -1,0 +1,106 @@
+sizeof分析
+1. 在32位系统中不同类型的内存分配
+1.1 基本类型
+Cpp代码  
+1.	sizeof(int);        // = 4    
+2.	sizeof(double);     // = 8    
+3.	sizeof(char);       // = 1    
+4.	sizeof(bool);       // = 1    
+5.	sizeof(short);      // = 2    
+6.	sizeof(float);      // = 4    
+7.	sizeof(long);       // = 4   
+1.2 指针
+指针在32位系统中占4个字节。
+Cpp代码  
+1.	sizeof(int *);         // = 4    
+2.	sizeof(double *);      // = 4    
+3.	sizeof(char *);        // = 4   
+1.3 数组
+1.3.1 数组的sizeof返回整个数组所占的字节数，即（数组元素个数×每个元素所占字节）。
+Cpp代码  
+1.	int ai[] = {1, 2};    
+2.	sizeof(ai);          // = 2*4 = 8   
+1.3.2 常量字符串与字符数组的内存分配方式相同。
+Cpp代码  
+1.	char ac[] = "abcd";  //注意数组末尾的字符串终结符'\0'    
+2.	sizeof(ac);          // = 5*1 = 5    
+3.	sizeof("abcd");      // = 5*1 = 5   
+1.3.3 数组和指针所占的字节数不同，应注意区分。
+1.	int *pi = new int[10]; //这是指针    
+2.	sizeof(pi);            // = 4    
+3.	   
+4.	int ai[10];    
+5.	int *p = ai;           //这还是指针    
+6.	sizeof(p);             // = 4    
+7.	   
+8.	double* (*a)[3][6];    //看成(double *) (*a)[3][6]，即一个3×6的二维数组，数组元素为指针，指向double类型。    
+9.	sizeof(a);             // = 4，a为指向上述二维数组的指针    
+10.	sizeof(*a);            // = sizeof(double *)*3*6 = 72，*a表示上述二维数组        
+11.	sizeof(**a);           // = sizeof(double *)*6 = 24，**a即*(*a)，表示double*[6]，是元素为double指针的一维数组。    
+12.	sizeof(***a);          // = sizeof(double *) = 4，表示上述一维数组中的第一个元素，元素类型为double指针。    
+13.	sizeof(****a);         // = sizeof(double) = 8，表示上述数组首元素指向的double类型。   
+1.3.4 函数形式参数中的数组会蜕变为指针，原因是数组参数“传址调用”，调用者只需将实参的地址传递过去。有一种情况例外，那就是参数是指向数组的指针。
+1.	void acf(char p[3])     //参数类型是int[]，表示指向int的指针    
+2.	{    
+3.	    sizeof( p );        // = 4    
+4.	}    
+5.	void aif(int p[])       //参数类型是int[]，表示指向int的指针    
+6.	{    
+7.	    sizeof( p );        // = 4    
+8.	}    
+9.	void pif(int (*p)[6])   //参数类型是int (*)[6]，表示指向int数组的指针    
+10.	{    
+11.	    sizeof( p);         // = 4    
+12.	    sizeof( *p );       // = sizeof(int)*6 = 24    
+13.	}    
+14.	void ppf(int *p[6])     //参数类型是int *[]，表示指向int指针的指针    
+15.	{    
+16.	    sizeof( p );        // = 4    
+17.	    sizeof( *p );       // = 4    
+18.	}   
+1.4. 类和结构体的内存分配。
+1.4.1 空类或空结构体占一个字节。
+Cpp代码  
+1.	class CEmpty { };    
+2.	sizeof(CEmpty); // = 1    
+3.	   
+4.	struct SEmpty { };    
+5.	sizeof(SEmpty); // = 1   
+1.4.2 非空类和结构体所占字节为所有成员占字节的和，但是不包括成员函数和静态成员所占的空间。
+Cpp代码  
+1.	class CInt : public CEmpty {    
+2.	    int i;    
+3.	};    
+4.	sizeof(CInt); // = 4;    
+5.	   
+6.	class CFunc {    
+7.	    void f() {}    
+8.	};    
+9.	sizeof(CFunc); // = 1;    
+10.	   
+11.	struct SInt : SEmpty {    
+12.	    static int i;    
+13.	};    
+14.	sizeof(SInt); // = 1;   
+1.4.3 字节对齐
+为了加快计算机的取数速度，编译器默认对内存进行字节对齐。对结构体（包括类）进行字节对齐的原则是：
+1）结构体变量的首地址能够被其最宽基本类型成员的大小所整除；
+2）结构体每个成员相对于结构体首地址的偏移量（offset）都是成员大小的整数倍，如有需要编译器会在成员之间加上填充字节（internal adding）；
+3）结构体的总大小为结构体最宽基本类型成员大小的整数倍，如有需要编译器会在最末一个成员之后加上填充字节（trailing padding）。
+Cpp代码  
+1.	struct SByte1    
+2.	{    
+3.	    double d;    // 偏移量0~7    
+4.	    char j;      // 偏移量8    
+5.	    int a;       // 偏移量12~15，由于9不能整除4，故先填充9~11    
+6.	};    
+7.	sizeof(SByte1);  // = 16    
+8.	   
+9.	struct SByte2    
+10.	{          
+11.	    char j;      // 偏移量0    
+12.	    double d;    // 偏移量8~15，由于1不能整除8，故先填充1~7    
+13.	    int a;       // 偏移量16~19    
+14.	};    
+15.	sizeof(SByte2);  // = 24，为了凑成8的倍数，填充20~23   
+
